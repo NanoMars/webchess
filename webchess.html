@@ -3,12 +3,125 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chess Game</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>Chessboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        .chessboard {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            grid-template-rows: repeat(8, 1fr);
+            width: 80vmin; /* Make the board responsive */
+            height: 80vmin; /* Make the board responsive */
+            border: 2px solid black;
+        }
+        .square {
+            width: 100%;
+            height: 100%;
+            border: 1px solid gray;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .square img {
+            max-width: 90%; /* Ensure the piece fits well within the square */
+            max-height: 90%;
+        }
+    </style>
 </head>
 <body>
-    <h1>Simple Chess Game</h1>
-    <div id="chessboard"></div>
-    <script src="script.js"></script>
+    <div class="chessboard" id="chessboard"></div>
+    <script>
+        const pieceImages = {
+            'r': 'chess_pink/black_rook.png',
+            'n': 'chess_pink/black_knight.png',
+            'b': 'chess_pink/black_bishop.png',
+            'q': 'chess_pink/black_queen.png',
+            'k': 'chess_pink/black_king.png',
+            'p': 'chess_pink/black_pawn.png',
+            'R': 'chess_pink/white_rook.png',
+            'N': 'chess_pink/white_knight.png',
+            'B': 'chess_pink/white_bishop.png',
+            'Q': 'chess_pink/white_queen.png',
+            'K': 'chess_pink/white_king.png',
+            'P': 'chess_pink/white_pawn.png'
+        };
+
+        const initialBoardSetup = [
+            'rnbqkbnr',
+            'pppppppp',
+            '........',
+            '........',
+            '........',
+            '........',
+            'PPPPPPPP',
+            'RNBQKBNR'
+        ];
+
+        function createBoard() {
+            const chessboard = document.getElementById('chessboard');
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    const square = document.createElement('div');
+                    square.className = 'square';
+
+                    // Add checkered pattern
+                    if ((row + col) % 2 === 0) {
+                        square.style.backgroundColor = '#fff';
+                    } else {
+                        square.style.backgroundColor = '#888';
+                    }
+
+                    const piece = initialBoardSetup[row][col];
+                    if (piece !== '.') {
+                        const pieceImage = document.createElement('img');
+                        pieceImage.src = pieceImages[piece];
+                        square.appendChild(pieceImage);
+                    }
+
+                    chessboard.appendChild(square);
+                }
+            }
+        }
+
+        createBoard();
+
+        let selectedPiece = null;
+        const chessboard = document.getElementById('chessboard');
+
+        chessboard.addEventListener('click', (event) => {
+            const targetSquare = event.target.closest('.square');
+
+            if (!targetSquare) return;
+
+            if (selectedPiece) {
+                movePiece(selectedPiece, targetSquare);
+                selectedPiece = null;
+            } else if (targetSquare.firstChild) {
+                selectedPiece = targetSquare;
+            }
+        });
+
+        function movePiece(fromSquare, toSquare) {
+            if (!fromSquare || !toSquare) return;
+
+            const piece = fromSquare.firstChild;
+            const targetPiece = toSquare.firstChild;
+
+            // Prevent moving to a square with a piece of the same color
+            if (targetPiece && piece.src.includes('white') === targetPiece.src.includes('white')) return;
+
+            toSquare.innerHTML = ''; // Clear the target square
+            toSquare.appendChild(piece);
+        }
+    </script>
 </body>
 </html>

@@ -24,18 +24,20 @@
             border: 2px solid #020B1E;
         }
         .square {
+            position: relative; /* Ensure positioning context for children */
             width: 100%;
             height: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
+            transition: background-color 0.3s ease; /* Smooth transition for highlights */
         }
+
         .square img {
+            position: relative;
+            z-index: 1; /* Ensure image is on top */
             max-width: 90%; /* Ensure the piece fits well within the square */
             max-height: 90%;
-        }
-        .highlight {
-            background-color: rgb(255, 255, 255); /* white highlight */
         }
     </style>
 </head>
@@ -70,6 +72,8 @@
 
         function createBoard() {
             const chessboard = document.getElementById('chessboard');
+            chessboard.innerHTML = ''; // Clear existing squares
+
             for (let row = 0; row < 8; row++) {
                 for (let col = 0; col < 8; col++) {
                     const square = document.createElement('div');
@@ -86,6 +90,7 @@
                     if (piece !== '.') {
                         const pieceImage = document.createElement('img');
                         pieceImage.src = pieceImages[piece];
+                        pieceImage.dataset.type = piece; // Store piece type for easier access
                         square.appendChild(pieceImage);
                     }
 
@@ -105,8 +110,10 @@
             if (!targetSquare) return;
 
             if (selectedPiece) {
+                if (targetSquare.classList.contains('highlight')) {
+                    movePiece(selectedPiece, targetSquare);
+                }
                 clearHighlights();
-                movePiece(selectedPiece, targetSquare);
                 selectedPiece = null;
             } else if (targetSquare.firstChild) {
                 selectedPiece = targetSquare;
@@ -118,7 +125,6 @@
                 highlightPossibleMoves(possibleMoves);
             }
         });
-
 
         function calculatePossibleMoves(piece, row, col) {
             const possibleMoves = [];
@@ -184,7 +190,7 @@
 
         function addMoveIfValid(possibleMoves, row, col) {
             const square = chessboard.children[row * 8 + col];
-            if (!square.firstChild || square.firstChild.src.includes('white')) {
+            if (!square.firstChild || square.firstChild.src.includes('black')) {
                 possibleMoves.push(square);
                 return !square.firstChild; // Continue if empty
             }
@@ -200,22 +206,29 @@
             // Prevent moving to a square with a piece of the same color
             if (targetPiece && piece.src.includes('white') === targetPiece.src.includes('white')) return;
 
-            checkValidMove(fromSquare, toSquare);
-
             toSquare.innerHTML = ''; // Clear the target square
             toSquare.appendChild(piece);
-            
         }
 
         function highlightPossibleMoves(possibleMoves) {
             possibleMoves.forEach(square => {
-                square.classList.add('highlight');
+                square.style.backgroundColor = 'rgba(255, 255, 255, 1)'; // Apply the yellow highlight directly
             });
         }
 
         function clearHighlights() {
-            document.querySelectorAll('.highlight').forEach(square => {
-                square.classList.remove('highlight');
+            const chessboard = document.getElementById('chessboard');
+            Array.from(chessboard.children).forEach(square => {
+                // Reset background color to original color
+                const index = Array.from(chessboard.children).indexOf(square);
+                const row = Math.floor(index / 8);
+                const col = index % 8;
+
+                if ((row + col) % 2 === 0) {
+                    square.style.backgroundColor = '#FA8EC7'; // Original light pink color
+                } else {
+                    square.style.backgroundColor = '#020B1E'; // Original dark color
+                }
             });
         }
     </script>

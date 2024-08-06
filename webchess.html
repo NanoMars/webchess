@@ -14,7 +14,7 @@
             height: 100vh;
             margin: 0;
             background-color: #FA8EC7;
-        }
+        } 
         .chessboard {
             display: grid;
             grid-template-columns: repeat(8, 1fr);
@@ -109,17 +109,61 @@
             }
         });
 
+
+        function  checkValidMove(fromSquare, toSquare) {
+            const piece = fromSquare.firstChild;
+            const src = piece.src;
+
+            switch (true) {
+                case src.includes('bishop'):
+                    console.log('The string contains "bishop".');
+                    break;
+                case src.includes('rook'):
+                    console.log('The string contains "rook".');
+                    break;
+                case src.includes('queen'):
+                    console.log('The string contains "queen".');
+                    break;
+                default:
+                    console.log('No match found.');
+    }
+                
+                    
+
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         function movePiece(fromSquare, toSquare) {
             if (!fromSquare || !toSquare) return;
 
             const piece = fromSquare.firstChild;
             const targetPiece = toSquare.firstChild;
-
+            
             // Prevent moving to a square with a piece of the same color
             if (targetPiece && piece.src.includes('white') === targetPiece.src.includes('white')) return;
 
+            checkValidMove(fromSquare, toSquare);
+
             toSquare.innerHTML = ''; // Clear the target square
             toSquare.appendChild(piece);
+            
         }
     </script>
 </body>

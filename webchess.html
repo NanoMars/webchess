@@ -34,6 +34,9 @@
             max-width: 90%; /* Ensure the piece fits well within the square */
             max-height: 90%;
         }
+        .highlight {
+            background-color: rgb(255, 255, 255); /* white highlight */
+        }
     </style>
 </head>
 <body>
@@ -56,12 +59,12 @@
 
         const initialBoardSetup = [
             'rnbqkbnr',
-            'pppppppp',
             '........',
             '........',
             '........',
             '........',
-            'PPPPPPPP',
+            '........',
+            '........',
             'RNBQKBNR'
         ];
 
@@ -102,53 +105,91 @@
             if (!targetSquare) return;
 
             if (selectedPiece) {
+                clearHighlights();
                 movePiece(selectedPiece, targetSquare);
                 selectedPiece = null;
             } else if (targetSquare.firstChild) {
                 selectedPiece = targetSquare;
+                const piece = targetSquare.firstChild;
+                const row = Math.floor(Array.from(chessboard.children).indexOf(targetSquare) / 8);
+                const col = Array.from(chessboard.children).indexOf(targetSquare) % 8;
+
+                const possibleMoves = calculatePossibleMoves(piece, row, col);
+                highlightPossibleMoves(possibleMoves);
             }
         });
 
 
-        function  checkValidMove(fromSquare, toSquare) {
-            const piece = fromSquare.firstChild;
-            const src = piece.src;
+        function calculatePossibleMoves(piece, row, col) {
+            const possibleMoves = [];
 
             switch (true) {
-                case src.includes('bishop'):
-                    console.log('The string contains "bishop".');
+                case piece.src.includes('rook'):
+                    calculateRookMoves(possibleMoves, row, col);
                     break;
-                case src.includes('rook'):
-                    console.log('The string contains "rook".');
+                case piece.src.includes('bishop'):
+                    calculateBishopMoves(possibleMoves, row, col);
                     break;
-                case src.includes('queen'):
-                    console.log('The string contains "queen".');
+                case piece.src.includes('queen'):
+                    calculateQueenMoves(possibleMoves, row, col);
                     break;
-                default:
-                    console.log('No match found.');
-    }
-                
-                    
+                // Add cases for other pieces
+            }
 
+            return possibleMoves;
         }
 
+        function calculateRookMoves(possibleMoves, row, col) {
+            // Check upwards
+            for (let r = row - 1; r >= 0; r--) {
+                if (!addMoveIfValid(possibleMoves, r, col)) break;
+            }
+            // Check downwards
+            for (let r = row + 1; r < 8; r++) {
+                if (!addMoveIfValid(possibleMoves, r, col)) break;
+            }
+            // Check left
+            for (let c = col - 1; c >= 0; c--) {
+                if (!addMoveIfValid(possibleMoves, row, c)) break;
+            }
+            // Check right
+            for (let c = col + 1; c < 8; c++) {
+                if (!addMoveIfValid(possibleMoves, row, c)) break;
+            }
+        }
 
+        function calculateBishopMoves(possibleMoves, row, col) {
+            // Diagonal up-left
+            for (let r = row - 1, c = col - 1; r >= 0 && c >= 0; r--, c--) {
+                if (!addMoveIfValid(possibleMoves, r, c)) break;
+            }
+            // Diagonal up-right
+            for (let r = row - 1, c = col + 1; r >= 0 && c < 8; r--, c++) {
+                if (!addMoveIfValid(possibleMoves, r, c)) break;
+            }
+            // Diagonal down-left
+            for (let r = row + 1, c = col - 1; r < 8 && c >= 0; r++, c--) {
+                if (!addMoveIfValid(possibleMoves, r, c)) break;
+            }
+            // Diagonal down-right
+            for (let r = row + 1, c = col + 1; r < 8 && c < 8; r++, c++) {
+                if (!addMoveIfValid(possibleMoves, r, c)) break;
+            }
+        }
 
+        function calculateQueenMoves(possibleMoves, row, col) {
+            calculateRookMoves(possibleMoves, row, col);
+            calculateBishopMoves(possibleMoves, row, col);
+        }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        function addMoveIfValid(possibleMoves, row, col) {
+            const square = chessboard.children[row * 8 + col];
+            if (!square.firstChild || square.firstChild.src.includes('white')) {
+                possibleMoves.push(square);
+                return !square.firstChild; // Continue if empty
+            }
+            return false; // Stop if there's an enemy piece
+        }
 
         function movePiece(fromSquare, toSquare) {
             if (!fromSquare || !toSquare) return;
@@ -164,6 +205,18 @@
             toSquare.innerHTML = ''; // Clear the target square
             toSquare.appendChild(piece);
             
+        }
+
+        function highlightPossibleMoves(possibleMoves) {
+            possibleMoves.forEach(square => {
+                square.classList.add('highlight');
+            });
+        }
+
+        function clearHighlights() {
+            document.querySelectorAll('.highlight').forEach(square => {
+                square.classList.remove('highlight');
+            });
         }
     </script>
 </body>

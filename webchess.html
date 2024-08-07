@@ -109,8 +109,13 @@
 
             if (!targetSquare) return;
 
+            // Ensure the click target is the square itself, not the child elements
+            const targetIndex = Array.from(chessboard.children).indexOf(targetSquare);
+            const targetRow = Math.floor(targetIndex / 8);
+            const targetCol = targetIndex % 8;
+
             if (selectedPiece) {
-                if (targetSquare.classList.contains('highlight')) {
+                if (targetSquare.style.backgroundColor === 'rgb(255, 255, 255)') {
                     movePiece(selectedPiece, targetSquare);
                 }
                 clearHighlights();
@@ -118,10 +123,10 @@
             } else if (targetSquare.firstChild) {
                 selectedPiece = targetSquare;
                 const piece = targetSquare.firstChild;
-                const row = Math.floor(Array.from(chessboard.children).indexOf(targetSquare) / 8);
-                const col = Array.from(chessboard.children).indexOf(targetSquare) % 8;
+                const pieceRow = Math.floor(Array.from(chessboard.children).indexOf(targetSquare) / 8);
+                const pieceCol = Array.from(chessboard.children).indexOf(targetSquare) % 8;
 
-                const possibleMoves = calculatePossibleMoves(piece, row, col);
+                const possibleMoves = calculatePossibleMoves(piece, pieceRow, pieceCol);
                 highlightPossibleMoves(possibleMoves);
             }
         });
@@ -194,7 +199,7 @@
                 possibleMoves.push(square);
                 return !square.firstChild; // Continue if empty
             }
-            return false; // Stop if there's an enemy piece
+            return false; // Stop if there's a piece of the same color
         }
 
         function movePiece(fromSquare, toSquare) {
@@ -202,24 +207,24 @@
 
             const piece = fromSquare.firstChild;
             const targetPiece = toSquare.firstChild;
-            
+
             // Prevent moving to a square with a piece of the same color
             if (targetPiece && piece.src.includes('white') === targetPiece.src.includes('white')) return;
 
-            toSquare.innerHTML = ''; // Clear the target square
+            fromSquare.removeChild(piece);
             toSquare.appendChild(piece);
         }
 
         function highlightPossibleMoves(possibleMoves) {
             possibleMoves.forEach(square => {
-                square.style.backgroundColor = 'rgba(255, 255, 255, 1)'; // Apply the yellow highlight directly
+                square.style.backgroundColor = '#FFFFFF'; // Use solid white for highlighting
             });
         }
 
         function clearHighlights() {
             const chessboard = document.getElementById('chessboard');
             Array.from(chessboard.children).forEach(square => {
-                // Reset background color to original color
+                // Reset background color to original color based on position
                 const index = Array.from(chessboard.children).indexOf(square);
                 const row = Math.floor(index / 8);
                 const col = index % 8;
@@ -231,6 +236,7 @@
                 }
             });
         }
+
     </script>
 </body>
 </html>

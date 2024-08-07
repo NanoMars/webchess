@@ -61,12 +61,12 @@
 
         const initialBoardSetup = [
             'rnbqkbnr',
+            'pppppppp',
             '........',
             '........',
             '........',
             '........',
-            '........',
-            '........',
+            'PPPPPPPP',
             'RNBQKBNR'
         ];
 
@@ -149,30 +149,17 @@
             return true; // Path is clear
         }
         
+        // Calculate possible moves for a piece
         function calculatePossibleMoves(piece, row, col) {
             const possibleMoves = [];
-
-            switch (true) {
-                case piece.src.includes('rook'):
-                    calculateRookMoves(possibleMoves, row, col, piece);
-                    break;
-                case piece.src.includes('bishop'):
-                    calculateBishopMoves(possibleMoves, row, col, piece);
-                    break;
-                case piece.src.includes('queen'):
-                    calculateQueenMoves(possibleMoves, row, col, piece);
-                    break;
-                case piece.src.includes('knight'):
-                    calculateKnightMoves(possibleMoves, row, col, piece);
-                    break;
-                case piece.src.includes('king'):
-                    calculateKingMoves(possibleMoves, row, col, piece);
-                    break;
-                case piece.src.includes('pawn'):
-                    calculatePawnMoves(possibleMoves, row, col, piece);
-                    break;
+            switch (piece.dataset.type.toLowerCase()) {
+                case 'r': calculateRookMoves(possibleMoves, row, col, piece); break;
+                case 'b': calculateBishopMoves(possibleMoves, row, col, piece); break;
+                case 'q': calculateQueenMoves(possibleMoves, row, col, piece); break;
+                case 'n': calculateKnightMoves(possibleMoves, row, col, piece); break;
+                case 'k': calculateKingMoves(possibleMoves, row, col, piece); break;
+                case 'p': calculatePawnMoves(possibleMoves, row, col, piece); break;
             }
-
             return possibleMoves;
         }
 
@@ -296,16 +283,25 @@
                 }
             }
 
-            // Captures
+            // Diagonal captures
             if (isOpponentPiece(row + direction, col - 1, piece)) {
                 possibleMoves.push(chessboard.children[(row + direction) * 8 + (col - 1)]);
             }
             if (isOpponentPiece(row + direction, col + 1, piece)) {
                 possibleMoves.push(chessboard.children[(row + direction) * 8 + (col + 1)]);
             }
+
+            // En Passant capture
+            if (lastMove && lastMove.pieceType === 'p' && Math.abs(lastMove.from.row - lastMove.to.row) === 2) {
+                if (Math.abs(lastMove.to.col - col) === 1 && lastMove.to.row === row) {
+                    possibleMoves.push(chessboard.children[(row + direction) * 8 + lastMove.to.col]);
+                }
+            }
         }
 
-        function addMoveIfValid(possibleMoves, row, col, piece, canJump = false) {
+        // Add valid moves for non-jumping pieces (e.g., rook, bishop)
+        function addMoveIfValid(possibleMoves, row, col, piece) {
+            if (row < 0 || row >= 8 || col < 0 || col >= 8) return false;
             const square = chessboard.children[row * 8 + col];
             const topPiece = square.querySelector('.piece-container').lastChild;
 
@@ -317,7 +313,7 @@
             }
 
             possibleMoves.push(square); // Add empty square as a valid move
-            return true; // Continue if empty, unless canJump allows
+            return true;
         }
 
         function isSquareEmpty(row, col) {
@@ -336,35 +332,24 @@
 
         let lastMove = null; // Track the last move for En Passant
 
+        // Move a piece and handle captures
         function movePiece(fromSquare, toSquare) {
             const fromContainer = fromSquare.querySelector('.piece-container');
             const toContainer = toSquare.querySelector('.piece-container');
             const piece = fromContainer.lastChild;
             const targetPiece = toContainer.lastChild;
-                            
-                // Castling move
-                if (piece.dataset.type.toLowerCase() === 'k' && Math.abs(fromSquare.cellIndex - toSquare.cellIndex) === 2) {
-                    const direction = toSquare.cellIndex > fromSquare.cellIndex ? 1 : -1;
-                    const rookStartCol = direction === 1 ? 7 : 0;
-                    const rookEndCol = fromSquare.cellIndex + direction;
 
-                    const rookSquare = chessboard.children[fromSquare.rowIndex * 8 + rookStartCol];
-                    const rook = rookSquare.querySelector('.piece-container').lastChild;
-                    const rookTargetSquare = chessboard.children[fromSquare.rowIndex * 8 + rookEndCol];
-                    
-                    // Move rook
-                    rookSquare.querySelector('.piece-container').removeChild(rook);
-                    rookTargetSquare.querySelector('.piece-container').appendChild(rook);
-                }
+            // Capture logic
+            if (targetPiece && piece.src.includes('white') !== targetPiece.src.includes('white')) {
+                toContainer.removeChild(targetPiece);
+            }
 
-                // Mark king and rook as moved
-                if (piece.dataset.type.toLowerCase() === 'k') {
-                    kingMoved[piece.src.includes('white') ? 'white' : 'black'] = true;
-                } else if (piece.dataset.type.toLowerCase() === 'r') {
-                    const side = fromSquare.cellIndex === 0 ? 'left' : 'right';
-                    rookMoved[piece.src.includes('white') ? 'white' : 'black'][side] = true;
-                }
-
+            // En Passant capture
+            if (piece.dataset.type.toLowerCase() === 'p' && !targetPiece && Math.abs(fromSquare.cellIndex - toSquare.cellIndex) === 1) {
+                const direction = piece.src.includes('white') ? 1 : -1;
+                const enPassantSquare = chessboard.children[(toSquare.rowIndex - direction) * 8 + toSquare.cellIndex];
+                enPassantSquare.querySelector('.piece-container').innerHTML = ''; // Remove captured pawn
+            }
 
             // Pawn promotion
             if (piece.dataset.type.toLowerCase() === 'p' && (toSquare.rowIndex === 0 || toSquare.rowIndex === 7)) {
@@ -373,40 +358,39 @@
                 piece.dataset.type = newPieceType;
             }
 
-            if (piece.dataset.type.toLowerCase() === 'p') {
-                const direction = piece.src.includes('white') ? -1 : 1;
+            // Castling
+            if (piece.dataset.type.toLowerCase() === 'k' && Math.abs(fromSquare.cellIndex - toSquare.cellIndex) === 2) {
+                const direction = toSquare.cellIndex > fromSquare.cellIndex ? 1 : -1;
+                const rookStartCol = direction === 1 ? 7 : 0;
+                const rookEndCol = fromSquare.cellIndex + direction;
 
-                // En Passant logic
-                if (Math.abs(fromSquare.rowIndex - toSquare.rowIndex) === 1 && lastMove) {
-                    const lastRow = lastMove.to.row;
-                    const lastCol = lastMove.to.col;
-                    if (Math.abs(lastMove.from.row - lastRow) === 2 &&
-                        lastCol === toSquare.cellIndex &&
-                        lastRow === fromSquare.rowIndex) {
-                        const enPassantSquare = chessboard.children[lastRow * 8 + lastCol];
-                        enPassantSquare.querySelector('.piece-container').innerHTML = ''; // Remove the captured pawn
-                    }
-                }
-
-                // Update last move
-                lastMove = { from: { row: fromSquare.rowIndex, col: fromSquare.cellIndex }, to: { row: toSquare.rowIndex, col: toSquare.cellIndex } };
-            }
-
-            // Capture logic
-            if (targetPiece && piece.src.includes('white') !== targetPiece.src.includes('white')) {
-                toContainer.removeChild(targetPiece);
+                const rookSquare = chessboard.children[fromSquare.rowIndex * 8 + rookStartCol];
+                const rook = rookSquare.querySelector('.piece-container').lastChild;
+                const rookTargetSquare = chessboard.children[fromSquare.rowIndex * 8 + rookEndCol];
+                
+                rookSquare.querySelector('.piece-container').removeChild(rook);
+                rookTargetSquare.querySelector('.piece-container').appendChild(rook);
             }
 
             // Move the piece
             fromContainer.removeChild(piece);
             toContainer.appendChild(piece);
+
+            // Update last move
+            lastMove = { from: { row: fromSquare.rowIndex, col: fromSquare.cellIndex }, to: { row: toSquare.rowIndex, col: toSquare.cellIndex }, pieceType: piece.dataset.type.toLowerCase() };
         }
 
 
+        // Highlight possible moves for a selected piece
+        function highlightPossibleMoves(possibleMoves) {
+            possibleMoves.forEach(square => {
+                square.style.backgroundColor = '#FFFFFF'; // Highlight move options
+            });
+        }
+
+        // Clear highlights from squares
         function clearHighlights() {
-            const chessboard = document.getElementById('chessboard');
             Array.from(chessboard.children).forEach(square => {
-                // Reset background color to original color based on position
                 const index = Array.from(chessboard.children).indexOf(square);
                 const row = Math.floor(index / 8);
                 const col = index % 8;

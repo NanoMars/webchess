@@ -284,10 +284,12 @@
             }
 
             // Diagonal captures
-            if (isOpponentPiece(row + direction, col - 1, piece)) {
+            
+            // Diagonal captures with boundary checks
+            if (col - 1 >= 0 && isOpponentPiece(row + direction, col - 1, piece)) {
                 possibleMoves.push(chessboard.children[(row + direction) * 8 + (col - 1)]);
             }
-            if (isOpponentPiece(row + direction, col + 1, piece)) {
+            if (col + 1 < 8 && isOpponentPiece(row + direction, col + 1, piece)) {
                 possibleMoves.push(chessboard.children[(row + direction) * 8 + (col + 1)]);
             }
 
@@ -339,24 +341,27 @@ function movePiece(fromSquare, toSquare) {
     const piece = fromContainer.lastChild;
     const targetPiece = toContainer.lastChild;
 
+    
     // Capture logic
     if (targetPiece && piece.src.includes('white') !== targetPiece.src.includes('white')) {
         toContainer.removeChild(targetPiece);
     }
 
     // En Passant capture
+    /*
     if (piece.dataset.type.toLowerCase() === 'p' && !targetPiece && Math.abs(fromSquare.cellIndex - toSquare.cellIndex) === 1) {
         const direction = piece.src.includes('white') ? 1 : -1;
         const enPassantSquare = chessboard.children[(toSquare.rowIndex - direction) * 8 + toSquare.cellIndex];
         enPassantSquare.querySelector('.piece-container').innerHTML = ''; // Remove captured pawn
-    }
+    }*/
 
     // Pawn promotion
+    /*
     if (piece.dataset.type.toLowerCase() === 'p' && (toSquare.rowIndex === 0 || toSquare.rowIndex === 7)) {
         const newPieceType = piece.src.includes('white') ? 'Q' : 'q'; // Promote to queen
         piece.src = pieceImages[newPieceType];
         piece.dataset.type = newPieceType;
-    }
+    }*/
 
     // Move the piece
     fromContainer.removeChild(piece);

@@ -86,12 +86,17 @@
                         square.style.backgroundColor = '#020B1E';
                     }
 
+                    // Create a container for stacking pieces
+                    const pieceContainer = document.createElement('div');
+                    pieceContainer.className = 'piece-container';
+                    square.appendChild(pieceContainer);
+
                     const piece = initialBoardSetup[row][col];
                     if (piece !== '.') {
                         const pieceImage = document.createElement('img');
                         pieceImage.src = pieceImages[piece];
                         pieceImage.dataset.type = piece; // Store piece type for easier access
-                        square.appendChild(pieceImage);
+                        pieceContainer.appendChild(pieceImage);
                     }
 
                     chessboard.appendChild(square);
@@ -121,8 +126,11 @@
                 clearHighlights();
                 selectedPiece = null;
             } else if (targetSquare.firstChild) {
+                const pieceContainer = targetSquare.querySelector('.piece-container');
+                const piece = pieceContainer.lastChild; // Select the top piece
+                if (!piece) return;
+
                 selectedPiece = targetSquare;
-                const piece = targetSquare.firstChild;
                 const pieceRow = Math.floor(Array.from(chessboard.children).indexOf(targetSquare) / 8);
                 const pieceCol = Array.from(chessboard.children).indexOf(targetSquare) % 8;
 
@@ -131,95 +139,269 @@
             }
         });
 
+        function isPathClear(row, startCol, endCol) {
+            for (let c = Math.min(startCol, endCol) + 1; c < Math.max(startCol, endCol); c++) {
+                const square = chessboard.children[row * 8 + c];
+                if (square.querySelector('.piece-container').lastChild) {
+                    return false; // Path is not clear
+                }
+            }
+            return true; // Path is clear
+        }
+        
         function calculatePossibleMoves(piece, row, col) {
             const possibleMoves = [];
 
             switch (true) {
                 case piece.src.includes('rook'):
-                    calculateRookMoves(possibleMoves, row, col);
+                    calculateRookMoves(possibleMoves, row, col, piece);
                     break;
                 case piece.src.includes('bishop'):
-                    calculateBishopMoves(possibleMoves, row, col);
+                    calculateBishopMoves(possibleMoves, row, col, piece);
                     break;
                 case piece.src.includes('queen'):
-                    calculateQueenMoves(possibleMoves, row, col);
+                    calculateQueenMoves(possibleMoves, row, col, piece);
                     break;
-                // Add cases for other pieces
+                case piece.src.includes('knight'):
+                    calculateKnightMoves(possibleMoves, row, col, piece);
+                    break;
+                case piece.src.includes('king'):
+                    calculateKingMoves(possibleMoves, row, col, piece);
+                    break;
+                case piece.src.includes('pawn'):
+                    calculatePawnMoves(possibleMoves, row, col, piece);
+                    break;
             }
 
             return possibleMoves;
         }
 
-        function calculateRookMoves(possibleMoves, row, col) {
+        function calculateRookMoves(possibleMoves, row, col, piece) {
             // Check upwards
             for (let r = row - 1; r >= 0; r--) {
-                if (!addMoveIfValid(possibleMoves, r, col)) break;
+                if (!addMoveIfValid(possibleMoves, r, col, piece)) break;
             }
             // Check downwards
             for (let r = row + 1; r < 8; r++) {
-                if (!addMoveIfValid(possibleMoves, r, col)) break;
+                if (!addMoveIfValid(possibleMoves, r, col, piece)) break;
             }
             // Check left
             for (let c = col - 1; c >= 0; c--) {
-                if (!addMoveIfValid(possibleMoves, row, c)) break;
+                if (!addMoveIfValid(possibleMoves, row, c, piece)) break;
             }
             // Check right
             for (let c = col + 1; c < 8; c++) {
-                if (!addMoveIfValid(possibleMoves, row, c)) break;
+                if (!addMoveIfValid(possibleMoves, row, c, piece)) break;
             }
         }
 
-        function calculateBishopMoves(possibleMoves, row, col) {
+        function calculateBishopMoves(possibleMoves, row, col, piece) {
             // Diagonal up-left
             for (let r = row - 1, c = col - 1; r >= 0 && c >= 0; r--, c--) {
-                if (!addMoveIfValid(possibleMoves, r, c)) break;
+                if (!addMoveIfValid(possibleMoves, r, c, piece)) break;
             }
             // Diagonal up-right
             for (let r = row - 1, c = col + 1; r >= 0 && c < 8; r--, c++) {
-                if (!addMoveIfValid(possibleMoves, r, c)) break;
+                if (!addMoveIfValid(possibleMoves, r, c, piece)) break;
             }
             // Diagonal down-left
             for (let r = row + 1, c = col - 1; r < 8 && c >= 0; r++, c--) {
-                if (!addMoveIfValid(possibleMoves, r, c)) break;
+                if (!addMoveIfValid(possibleMoves, r, c, piece)) break;
             }
             // Diagonal down-right
             for (let r = row + 1, c = col + 1; r < 8 && c < 8; r++, c++) {
-                if (!addMoveIfValid(possibleMoves, r, c)) break;
+                if (!addMoveIfValid(possibleMoves, r, c, piece)) break;
             }
         }
 
-        function calculateQueenMoves(possibleMoves, row, col) {
-            calculateRookMoves(possibleMoves, row, col);
-            calculateBishopMoves(possibleMoves, row, col);
+        function calculateQueenMoves(possibleMoves, row, col, piece) {
+            calculateRookMoves(possibleMoves, row, col, piece);
+            calculateBishopMoves(possibleMoves, row, col, piece);
         }
 
-        function addMoveIfValid(possibleMoves, row, col) {
-            const square = chessboard.children[row * 8 + col];
-            if (!square.firstChild || square.firstChild.src.includes('black')) {
-                possibleMoves.push(square);
-                return !square.firstChild; // Continue if empty
-            }
-            return false; // Stop if there's a piece of the same color
-        }
+        function calculateKnightMoves(possibleMoves, row, col, piece) {
+            const knightMoves = [
+                [row - 2, col - 1], [row - 2, col + 1],
+                [row - 1, col - 2], [row - 1, col + 2],
+                [row + 1, col - 2], [row + 1, col + 2],
+                [row + 2, col - 1], [row + 2, col + 1]
+            ];
 
-        function movePiece(fromSquare, toSquare) {
-            if (!fromSquare || !toSquare) return;
-
-            const piece = fromSquare.firstChild;
-            const targetPiece = toSquare.firstChild;
-
-            // Prevent moving to a square with a piece of the same color
-            if (targetPiece && piece.src.includes('white') === targetPiece.src.includes('white')) return;
-
-            fromSquare.removeChild(piece);
-            toSquare.appendChild(piece);
-        }
-
-        function highlightPossibleMoves(possibleMoves) {
-            possibleMoves.forEach(square => {
-                square.style.backgroundColor = '#FFFFFF'; // Use solid white for highlighting
+            knightMoves.forEach(([r, c]) => {
+                if (r >= 0 && r < 8 && c >= 0 && c < 8) {
+                    addMoveIfValid(possibleMoves, r, c, piece, true); // Knights can jump over pieces
+                }
             });
         }
+
+        function calculateKingMoves(possibleMoves, row, col, piece) {
+            const kingMoves = [
+                [row - 1, col - 1], [row - 1, col], [row - 1, col + 1],
+                [row, col - 1], [row, col + 1],
+                [row + 1, col - 1], [row + 1, col], [row + 1, col + 1]
+            ];
+
+            kingMoves.forEach(([r, c]) => {
+                if (r >= 0 && r < 8 && c >= 0 && c < 8) {
+                    addMoveIfValid(possibleMoves, r, c, piece, false); // King can't jump over pieces
+                }
+            });
+
+            // Castling logic
+            const color = piece.src.includes('white') ? 'white' : 'black';
+
+            if (!kingMoved[color]) {
+                // Check right side castling
+                if (!rookMoved[color].right && isPathClear(row, col + 1, col + 3) && !isSquareUnderAttack(row, col, color)) {
+                    possibleMoves.push(chessboard.children[row * 8 + (col + 2)]);
+                }
+
+                // Check left side castling
+                if (!rookMoved[color].left && isPathClear(row, col - 1, col - 4) && !isSquareUnderAttack(row, col, color)) {
+                    possibleMoves.push(chessboard.children[row * 8 + (col - 2)]);
+                }
+            }
+        }
+
+        function isSquareUnderAttack(row, col, color) {
+            const opponentColor = color === 'white' ? 'black' : 'white';
+
+            // Check all squares for opponent pieces that can attack the given square
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const square = chessboard.children[r * 8 + c];
+                    const piece = square.querySelector('.piece-container').lastChild;
+
+                    if (piece && piece.src.includes(opponentColor)) {
+                        const possibleMoves = calculatePossibleMoves(piece, r, c);
+                        if (possibleMoves.includes(chessboard.children[row * 8 + col])) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
+        function calculatePawnMoves(possibleMoves, row, col, piece) {
+            const direction = piece.src.includes('white') ? -1 : 1; // White moves up, black moves down
+            const startRow = piece.src.includes('white') ? 6 : 1;
+
+            // Move forward
+            if (isSquareEmpty(row + direction, col)) {
+                possibleMoves.push(chessboard.children[(row + direction) * 8 + col]);
+                // Double move from starting position
+                if (row === startRow && isSquareEmpty(row + 2 * direction, col)) {
+                    possibleMoves.push(chessboard.children[(row + 2 * direction) * 8 + col]);
+                }
+            }
+
+            // Captures
+            if (isOpponentPiece(row + direction, col - 1, piece)) {
+                possibleMoves.push(chessboard.children[(row + direction) * 8 + (col - 1)]);
+            }
+            if (isOpponentPiece(row + direction, col + 1, piece)) {
+                possibleMoves.push(chessboard.children[(row + direction) * 8 + (col + 1)]);
+            }
+        }
+
+        function addMoveIfValid(possibleMoves, row, col, piece, canJump = false) {
+            const square = chessboard.children[row * 8 + col];
+            const topPiece = square.querySelector('.piece-container').lastChild;
+
+            if (topPiece) {
+                if (piece.src.includes('white') !== topPiece.src.includes('white')) {
+                    possibleMoves.push(square); // Capture opponent's piece
+                }
+                return false; // Stop further moves in this direction
+            }
+
+            possibleMoves.push(square); // Add empty square as a valid move
+            return true; // Continue if empty, unless canJump allows
+        }
+
+        function isSquareEmpty(row, col) {
+            const square = chessboard.children[row * 8 + col];
+            return !square.querySelector('.piece-container').lastChild;
+        }
+
+        function isOpponentPiece(row, col, piece) {
+            const square = chessboard.children[row * 8 + col];
+            const topPiece = square.querySelector('.piece-container').lastChild;
+            return topPiece && piece.src.includes('white') !== topPiece.src.includes('white');
+        }
+
+
+        
+
+        let lastMove = null; // Track the last move for En Passant
+
+        function movePiece(fromSquare, toSquare) {
+            const fromContainer = fromSquare.querySelector('.piece-container');
+            const toContainer = toSquare.querySelector('.piece-container');
+            const piece = fromContainer.lastChild;
+            const targetPiece = toContainer.lastChild;
+                            
+                // Castling move
+                if (piece.dataset.type.toLowerCase() === 'k' && Math.abs(fromSquare.cellIndex - toSquare.cellIndex) === 2) {
+                    const direction = toSquare.cellIndex > fromSquare.cellIndex ? 1 : -1;
+                    const rookStartCol = direction === 1 ? 7 : 0;
+                    const rookEndCol = fromSquare.cellIndex + direction;
+
+                    const rookSquare = chessboard.children[fromSquare.rowIndex * 8 + rookStartCol];
+                    const rook = rookSquare.querySelector('.piece-container').lastChild;
+                    const rookTargetSquare = chessboard.children[fromSquare.rowIndex * 8 + rookEndCol];
+                    
+                    // Move rook
+                    rookSquare.querySelector('.piece-container').removeChild(rook);
+                    rookTargetSquare.querySelector('.piece-container').appendChild(rook);
+                }
+
+                // Mark king and rook as moved
+                if (piece.dataset.type.toLowerCase() === 'k') {
+                    kingMoved[piece.src.includes('white') ? 'white' : 'black'] = true;
+                } else if (piece.dataset.type.toLowerCase() === 'r') {
+                    const side = fromSquare.cellIndex === 0 ? 'left' : 'right';
+                    rookMoved[piece.src.includes('white') ? 'white' : 'black'][side] = true;
+                }
+
+
+            // Pawn promotion
+            if (piece.dataset.type.toLowerCase() === 'p' && (toSquare.rowIndex === 0 || toSquare.rowIndex === 7)) {
+                const newPieceType = piece.src.includes('white') ? 'Q' : 'q'; // Promote to queen
+                piece.src = pieceImages[newPieceType];
+                piece.dataset.type = newPieceType;
+            }
+
+            if (piece.dataset.type.toLowerCase() === 'p') {
+                const direction = piece.src.includes('white') ? -1 : 1;
+
+                // En Passant logic
+                if (Math.abs(fromSquare.rowIndex - toSquare.rowIndex) === 1 && lastMove) {
+                    const lastRow = lastMove.to.row;
+                    const lastCol = lastMove.to.col;
+                    if (Math.abs(lastMove.from.row - lastRow) === 2 &&
+                        lastCol === toSquare.cellIndex &&
+                        lastRow === fromSquare.rowIndex) {
+                        const enPassantSquare = chessboard.children[lastRow * 8 + lastCol];
+                        enPassantSquare.querySelector('.piece-container').innerHTML = ''; // Remove the captured pawn
+                    }
+                }
+
+                // Update last move
+                lastMove = { from: { row: fromSquare.rowIndex, col: fromSquare.cellIndex }, to: { row: toSquare.rowIndex, col: toSquare.cellIndex } };
+            }
+
+            // Capture logic
+            if (targetPiece && piece.src.includes('white') !== targetPiece.src.includes('white')) {
+                toContainer.removeChild(targetPiece);
+            }
+
+            // Move the piece
+            fromContainer.removeChild(piece);
+            toContainer.appendChild(piece);
+        }
+
 
         function clearHighlights() {
             const chessboard = document.getElementById('chessboard');

@@ -333,52 +333,38 @@
         let lastMove = null; // Track the last move for En Passant
 
         // Move a piece and handle captures
-        function movePiece(fromSquare, toSquare) {
-            const fromContainer = fromSquare.querySelector('.piece-container');
-            const toContainer = toSquare.querySelector('.piece-container');
-            const piece = fromContainer.lastChild;
-            const targetPiece = toContainer.lastChild;
+function movePiece(fromSquare, toSquare) {
+    const fromContainer = fromSquare.querySelector('.piece-container');
+    const toContainer = toSquare.querySelector('.piece-container');
+    const piece = fromContainer.lastChild;
+    const targetPiece = toContainer.lastChild;
 
-            // Capture logic
-            if (targetPiece && piece.src.includes('white') !== targetPiece.src.includes('white')) {
-                toContainer.removeChild(targetPiece);
-            }
+    // Capture logic
+    if (targetPiece && piece.src.includes('white') !== targetPiece.src.includes('white')) {
+        toContainer.removeChild(targetPiece);
+    }
 
-            // En Passant capture
-            if (piece.dataset.type.toLowerCase() === 'p' && !targetPiece && Math.abs(fromSquare.cellIndex - toSquare.cellIndex) === 1) {
-                const direction = piece.src.includes('white') ? 1 : -1;
-                const enPassantSquare = chessboard.children[(toSquare.rowIndex - direction) * 8 + toSquare.cellIndex];
-                enPassantSquare.querySelector('.piece-container').innerHTML = ''; // Remove captured pawn
-            }
+    // En Passant capture
+    if (piece.dataset.type.toLowerCase() === 'p' && !targetPiece && Math.abs(fromSquare.cellIndex - toSquare.cellIndex) === 1) {
+        const direction = piece.src.includes('white') ? 1 : -1;
+        const enPassantSquare = chessboard.children[(toSquare.rowIndex - direction) * 8 + toSquare.cellIndex];
+        enPassantSquare.querySelector('.piece-container').innerHTML = ''; // Remove captured pawn
+    }
 
-            // Pawn promotion
-            if (piece.dataset.type.toLowerCase() === 'p' && (toSquare.rowIndex === 0 || toSquare.rowIndex === 7)) {
-                const newPieceType = piece.src.includes('white') ? 'Q' : 'q'; // Promote to queen
-                piece.src = pieceImages[newPieceType];
-                piece.dataset.type = newPieceType;
-            }
+    // Pawn promotion
+    if (piece.dataset.type.toLowerCase() === 'p' && (toSquare.rowIndex === 0 || toSquare.rowIndex === 7)) {
+        const newPieceType = piece.src.includes('white') ? 'Q' : 'q'; // Promote to queen
+        piece.src = pieceImages[newPieceType];
+        piece.dataset.type = newPieceType;
+    }
 
-            // Castling
-            if (piece.dataset.type.toLowerCase() === 'k' && Math.abs(fromSquare.cellIndex - toSquare.cellIndex) === 2) {
-                const direction = toSquare.cellIndex > fromSquare.cellIndex ? 1 : -1;
-                const rookStartCol = direction === 1 ? 7 : 0;
-                const rookEndCol = fromSquare.cellIndex + direction;
+    // Move the piece
+    fromContainer.removeChild(piece);
+    toContainer.appendChild(piece);
 
-                const rookSquare = chessboard.children[fromSquare.rowIndex * 8 + rookStartCol];
-                const rook = rookSquare.querySelector('.piece-container').lastChild;
-                const rookTargetSquare = chessboard.children[fromSquare.rowIndex * 8 + rookEndCol];
-                
-                rookSquare.querySelector('.piece-container').removeChild(rook);
-                rookTargetSquare.querySelector('.piece-container').appendChild(rook);
-            }
-
-            // Move the piece
-            fromContainer.removeChild(piece);
-            toContainer.appendChild(piece);
-
-            // Update last move
-            lastMove = { from: { row: fromSquare.rowIndex, col: fromSquare.cellIndex }, to: { row: toSquare.rowIndex, col: toSquare.cellIndex }, pieceType: piece.dataset.type.toLowerCase() };
-        }
+    // Update last move
+    lastMove = { from: { row: fromSquare.rowIndex, col: fromSquare.cellIndex }, to: { row: toSquare.rowIndex, col: toSquare.cellIndex }, pieceType: piece.dataset.type.toLowerCase() };
+}
 
 
         // Highlight possible moves for a selected piece

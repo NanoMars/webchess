@@ -335,41 +335,67 @@
         let lastMove = null; // Track the last move for En Passant
 
         // Move a piece and handle captures
-function movePiece(fromSquare, toSquare) {
-    const fromContainer = fromSquare.querySelector('.piece-container');
-    const toContainer = toSquare.querySelector('.piece-container');
-    const piece = fromContainer.lastChild;
-    const targetPiece = toContainer.lastChild;
+        function movePiece(fromSquare, toSquare) {
+            const fromContainer = fromSquare.querySelector('.piece-container');
+            const toContainer = toSquare.querySelector('.piece-container');
+            const piece = fromContainer.lastChild;
+            const targetPiece = toContainer.lastChild;
 
-    
-    // Capture logic
-    if (targetPiece && piece.src.includes('white') !== targetPiece.src.includes('white')) {
-        toContainer.removeChild(targetPiece);
-    }
+            console.log("Moving piece from", fromSquare, "to", toSquare);
 
-    // En Passant capture
-    /*
-    if (piece.dataset.type.toLowerCase() === 'p' && !targetPiece && Math.abs(fromSquare.cellIndex - toSquare.cellIndex) === 1) {
-        const direction = piece.src.includes('white') ? 1 : -1;
-        const enPassantSquare = chessboard.children[(toSquare.rowIndex - direction) * 8 + toSquare.cellIndex];
-        enPassantSquare.querySelector('.piece-container').innerHTML = ''; // Remove captured pawn
-    }*/
+            // Capture logic
+            if (targetPiece && piece.src.includes('white') !== targetPiece.src.includes('white')) {
+                console.log("Capturing piece at target square:", targetPiece);
+                toContainer.removeChild(targetPiece);
+            }
 
-    // Pawn promotion
-    /*
-    if (piece.dataset.type.toLowerCase() === 'p' && (toSquare.rowIndex === 0 || toSquare.rowIndex === 7)) {
-        const newPieceType = piece.src.includes('white') ? 'Q' : 'q'; // Promote to queen
-        piece.src = pieceImages[newPieceType];
-        piece.dataset.type = newPieceType;
-    }*/
+            // En Passant capture
+            if (piece.dataset.type.toLowerCase() === 'p' && !targetPiece && lastMove && lastMove.pieceType === 'p' && Math.abs(lastMove.from.row - lastMove.to.row) === 2) {
+                const direction = piece.src.includes('white') ? -1 : 1;
+                const toRowIndex = Math.floor(Array.from(chessboard.children).indexOf(toSquare) / 8);
+                const toColIndex = Array.from(chessboard.children).indexOf(toSquare) % 8;
 
-    // Move the piece
-    fromContainer.removeChild(piece);
-    toContainer.appendChild(piece);
+                const enPassantRow = toRowIndex + direction;
+                const enPassantCol = toColIndex;
+                const enPassantSquare = chessboard.children[enPassantRow * 8 + enPassantCol];
+                const enPassantContainer = enPassantSquare.querySelector('.piece-container');
+                const enPassantPiece = enPassantContainer.lastChild;
 
-    // Update last move
-    lastMove = { from: { row: fromSquare.rowIndex, col: fromSquare.cellIndex }, to: { row: toSquare.rowIndex, col: toSquare.cellIndex }, pieceType: piece.dataset.type.toLowerCase() };
-}
+                console.log("Attempting en passant capture");
+                console.log("En Passant details - direction:", direction, "toRowIndex:", toRowIndex, "toColIndex:", toColIndex, "enPassantRow:", enPassantRow, "enPassantCol:", enPassantCol, "enPassantSquare:", enPassantSquare);
+
+                if (enPassantPiece && enPassantPiece.dataset.type.toLowerCase() === 'p' && enPassantPiece.src.includes(piece.src.includes('white') ? 'black' : 'white')) {
+                    console.log("Removing en passant captured pawn:", enPassantPiece);
+                    enPassantContainer.removeChild(enPassantPiece); // Remove the captured pawn
+                } else {
+                    console.log("No pawn found for en passant capture");
+                }
+            }
+
+            // Move the piece
+            fromContainer.removeChild(piece);
+            toContainer.appendChild(piece);
+
+            // Check for Pawn Promotion
+            const toIndex = Array.from(chessboard.children).indexOf(toSquare);
+            const rowIndex = Math.floor(toIndex / 8);
+            if (piece.dataset.type.toLowerCase() === 'p' && (rowIndex === 0 || rowIndex === 7)) {
+                const newPieceType = piece.src.includes('white') ? 'Q' : 'q'; // Promote to queen
+                console.log("Promoting pawn to queen:", newPieceType);
+                piece.src = pieceImages[newPieceType];
+                piece.dataset.type = newPieceType;
+            }
+
+            // Update last move
+            const fromIndex = Array.from(chessboard.children).indexOf(fromSquare);
+            lastMove = { 
+                from: { row: Math.floor(fromIndex / 8), col: fromIndex % 8 }, 
+                to: { row: rowIndex, col: toIndex % 8 }, 
+                pieceType: piece.dataset.type.toLowerCase() 
+            };
+
+            console.log("Move completed. Last move updated:", lastMove);
+        }
 
 
         // Highlight possible moves for a selected piece

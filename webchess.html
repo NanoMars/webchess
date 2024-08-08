@@ -350,18 +350,22 @@
             }
 
             // En Passant capture
-            if (piece.dataset.type.toLowerCase() === 'p' && !targetPiece && lastMove && lastMove.pieceType === 'p' && Math.abs(lastMove.from.row - lastMove.to.row) === 2) {
+            const isPawn = piece.dataset.type.toLowerCase() === 'p';
+            const isDoubleStep = lastMove && lastMove.pieceType === 'p' && Math.abs(lastMove.from.row - lastMove.to.row) === 2;
+            const isDiagonalMove = Math.abs(Array.from(chessboard.children).indexOf(fromSquare) % 8 - Array.from(chessboard.children).indexOf(toSquare) % 8) === 1;
+
+            if (isPawn && !targetPiece && isDoubleStep && isDiagonalMove) {
+                console.log("Attempting en passant capture");
                 const direction = piece.src.includes('white') ? -1 : 1;
                 const toRowIndex = Math.floor(Array.from(chessboard.children).indexOf(toSquare) / 8);
                 const toColIndex = Array.from(chessboard.children).indexOf(toSquare) % 8;
 
-                const enPassantRow = toRowIndex + direction;
+                const enPassantRow = toRowIndex - direction;
                 const enPassantCol = toColIndex;
                 const enPassantSquare = chessboard.children[enPassantRow * 8 + enPassantCol];
                 const enPassantContainer = enPassantSquare.querySelector('.piece-container');
                 const enPassantPiece = enPassantContainer.lastChild;
 
-                console.log("Attempting en passant capture");
                 console.log("En Passant details - direction:", direction, "toRowIndex:", toRowIndex, "toColIndex:", toColIndex, "enPassantRow:", enPassantRow, "enPassantCol:", enPassantCol, "enPassantSquare:", enPassantSquare);
 
                 if (enPassantPiece && enPassantPiece.dataset.type.toLowerCase() === 'p' && enPassantPiece.src.includes(piece.src.includes('white') ? 'black' : 'white')) {

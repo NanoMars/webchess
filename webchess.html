@@ -14,7 +14,7 @@
             height: 100vh;
             margin: 0;
             background-color: #FA8EC7;
-        } 
+        }
         .chessboard {
             display: grid;
             grid-template-columns: repeat(8, 1fr);
@@ -32,17 +32,32 @@
             justify-content: center;
             transition: background-color 0.3s ease; /* Smooth transition for highlights */
         }
-
         .square img {
             position: relative;
             z-index: 1; /* Ensure image is on top */
             max-width: 90%; /* Ensure the piece fits well within the square */
             max-height: 90%;
         }
+        .promotion-menu {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            background-color: white;
+            border: 1px solid black;
+            z-index: 10;
+        }
+        .promotion-menu img {
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
     <div class="chessboard" id="chessboard"></div>
+    <div id="promotion-menu" class="promotion-menu" style="display:none;"></div>
     <script>
         const pieceImages = {
             'r': 'chess_pink/black_rook.png',
@@ -334,6 +349,33 @@
 
         let lastMove = null; // Track the last move for En Passant
 
+
+        function showPromotionMenu(square, piece) {
+            const promotionMenu = document.getElementById('promotion-menu');
+            promotionMenu.innerHTML = '';
+
+            const pieces = piece.src.includes('white') ? ['Q', 'R', 'B', 'N'] : ['q', 'r', 'b', 'n'];
+            pieces.forEach(type => {
+                const img = document.createElement('img');
+                img.src = pieceImages[type];
+                img.dataset.type = type;
+                img.onclick = () => promotePawn(square, piece, type);
+                promotionMenu.appendChild(img);
+            });
+                promotionMenu.style.display = 'flex';
+            }
+
+            function hidePromotionMenu() {
+                const promotionMenu = document.getElementById('promotion-menu');
+                promotionMenu.style.display = 'none';
+            }
+
+            function promotePawn(square, piece, type) {
+                piece.src = pieceImages[type];
+                piece.dataset.type = type;
+                hidePromotionMenu();
+            }
+
         // Move a piece and handle captures
         function movePiece(fromSquare, toSquare) {
             const fromContainer = fromSquare.querySelector('.piece-container');
@@ -384,11 +426,10 @@
             const toIndex = Array.from(chessboard.children).indexOf(toSquare);
             const rowIndex = Math.floor(toIndex / 8);
             if (piece.dataset.type.toLowerCase() === 'p' && (rowIndex === 0 || rowIndex === 7)) {
-                const newPieceType = piece.src.includes('white') ? 'Q' : 'q'; // Promote to queen
-                console.log("Promoting pawn to queen:", newPieceType);
-                piece.src = pieceImages[newPieceType];
-                piece.dataset.type = newPieceType;
+                showPromotionMenu(toSquare, piece);
+                return; // Exit the function to wait for promotion selection
             }
+
 
             // Update last move
             const fromIndex = Array.from(chessboard.children).indexOf(fromSquare);

@@ -136,6 +136,16 @@
 
         createBoard();
 
+        const kingMoved = {
+            white: false,
+            black: false
+        };
+
+        const rookMoved = {
+            white: { left: false, right: false },
+            black: { left: false, right: false }
+        };
+
         let selectedPiece = null;
         const chessboard = document.getElementById('chessboard');
 
@@ -248,15 +258,25 @@
             const color = piece.src.includes('white') ? 'white' : 'black';
             if (!kingMoved[color]) {
                 // Right castling
-                if (!rookMoved[color].right && isPathClear(row, col, col + 3)) {
+                if (!rookMoved[color].right && isPathClear(row, col, col + 3) &&
+                    !isSquareUnderAttack(row, col, color) &&
+                    !isSquareUnderAttack(row, col + 1, color) &&
+                    !isSquareUnderAttack(row, col + 2, color)) {
                     possibleMoves.push(chessboard.children[row * 8 + (col + 2)]);
                 }
                 // Left castling
-                if (!rookMoved[color].left && isPathClear(row, col, col - 4)) {
+                if (!rookMoved[color].left && isPathClear(row, col, col - 4) &&
+                    !isSquareUnderAttack(row, col, color) &&
+                    !isSquareUnderAttack(row, col - 1, color) &&
+                    !isSquareUnderAttack(row, col - 2, color) &&
+                    !isSquareUnderAttack(row, col - 3, color)) {
                     possibleMoves.push(chessboard.children[row * 8 + (col - 2)]);
                 }
             }
         }
+
+
+        
 
         function calculateQueenMoves(possibleMoves, row, col, piece) {
             calculateRookMoves(possibleMoves, row, col, piece);
@@ -287,21 +307,19 @@
 
             kingMoves.forEach(([r, c]) => {
                 if (r >= 0 && r < 8 && c >= 0 && c < 8) {
-                    addMoveIfValid(possibleMoves, r, c, piece, false); // King can't jump over pieces
+                    addMoveIfValid(possibleMoves, r, c, piece);
                 }
             });
 
             // Castling logic
             const color = piece.src.includes('white') ? 'white' : 'black';
-
             if (!kingMoved[color]) {
-                // Check right side castling
-                if (!rookMoved[color].right && isPathClear(row, col + 1, col + 3) && !isSquareUnderAttack(row, col, color)) {
+                // Right castling
+                if (!rookMoved[color].right && isPathClear(row, col, col + 3) && !isSquareUnderAttack(row, col + 1, color) && !isSquareUnderAttack(row, col + 2, color)) {
                     possibleMoves.push(chessboard.children[row * 8 + (col + 2)]);
                 }
-
-                // Check left side castling
-                if (!rookMoved[color].left && isPathClear(row, col - 1, col - 4) && !isSquareUnderAttack(row, col, color)) {
+                // Left castling
+                if (!rookMoved[color].left && isPathClear(row, col, col - 4) && !isSquareUnderAttack(row, col - 1, color) && !isSquareUnderAttack(row, col - 2, color)) {
                     possibleMoves.push(chessboard.children[row * 8 + (col - 2)]);
                 }
             }
@@ -310,7 +328,6 @@
         function isSquareUnderAttack(row, col, color) {
             const opponentColor = color === 'white' ? 'black' : 'white';
 
-            // Check all squares for opponent pieces that can attack the given square
             for (let r = 0; r < 8; r++) {
                 for (let c = 0; c < 8; c++) {
                     const square = chessboard.children[r * 8 + c];

@@ -250,29 +250,10 @@
 
             kingMoves.forEach(([r, c]) => {
                 if (r >= 0 && r < 8 && c >= 0 && c < 8) {
+                    console.log(`Checking move for king to: (${r}, ${c})`);
                     addMoveIfValid(possibleMoves, r, c, piece);
                 }
             });
-
-            // Castling logic
-            const color = piece.src.includes('white') ? 'white' : 'black';
-            if (!kingMoved[color]) {
-                // Right castling
-                if (!rookMoved[color].right && isPathClear(row, col, col + 3) &&
-                    !isSquareUnderAttack(row, col, color) &&
-                    !isSquareUnderAttack(row, col + 1, color) &&
-                    !isSquareUnderAttack(row, col + 2, color)) {
-                    possibleMoves.push(chessboard.children[row * 8 + (col + 2)]);
-                }
-                // Left castling
-                if (!rookMoved[color].left && isPathClear(row, col, col - 4) &&
-                    !isSquareUnderAttack(row, col, color) &&
-                    !isSquareUnderAttack(row, col - 1, color) &&
-                    !isSquareUnderAttack(row, col - 2, color) &&
-                    !isSquareUnderAttack(row, col - 3, color)) {
-                    possibleMoves.push(chessboard.children[row * 8 + (col - 2)]);
-                }
-            }
         }
 
 
@@ -307,22 +288,32 @@
 
             kingMoves.forEach(([r, c]) => {
                 if (r >= 0 && r < 8 && c >= 0 && c < 8) {
+                    console.log(`Checking move for king to: (${r}, ${c})`);
                     addMoveIfValid(possibleMoves, r, c, piece);
                 }
             });
 
-            // Castling logic
+            // Castling logic commented out
+            /*
             const color = piece.src.includes('white') ? 'white' : 'black';
             if (!kingMoved[color]) {
                 // Right castling
-                if (!rookMoved[color].right && isPathClear(row, col, col + 3) && !isSquareUnderAttack(row, col + 1, color) && !isSquareUnderAttack(row, col + 2, color)) {
+                if (!rookMoved[color].right && isPathClear(row, col, col + 3) &&
+                    !isSquareUnderAttack(row, col, color) &&
+                    !isSquareUnderAttack(row, col + 1, color) &&
+                    !isSquareUnderAttack(row, col + 2, color)) {
                     possibleMoves.push(chessboard.children[row * 8 + (col + 2)]);
                 }
                 // Left castling
-                if (!rookMoved[color].left && isPathClear(row, col, col - 4) && !isSquareUnderAttack(row, col - 1, color) && !isSquareUnderAttack(row, col - 2, color)) {
+                if (!rookMoved[color].left && isPathClear(row, col, col - 4) &&
+                    !isSquareUnderAttack(row, col, color) &&
+                    !isSquareUnderAttack(row, col - 1, color) &&
+                    !isSquareUnderAttack(row, col - 2, color) &&
+                    !isSquareUnderAttack(row, col - 3, color)) {
                     possibleMoves.push(chessboard.children[row * 8 + (col - 2)]);
                 }
             }
+            */
         }
 
         function isSquareUnderAttack(row, col, color) {
@@ -383,11 +374,13 @@
 
             if (topPiece) {
                 if (piece.src.includes('white') !== topPiece.src.includes('white')) {
+                    console.log(`King can capture piece at: (${row}, ${col})`);
                     possibleMoves.push(square); // Capture opponent's piece
                 }
                 return false; // Stop further moves in this direction
             }
 
+            console.log(`King can move to empty square at: (${row}, ${col})`);
             possibleMoves.push(square); // Add empty square as a valid move
             return true;
         }
@@ -488,7 +481,6 @@
                 showPromotionMenu(toSquare, piece);
                 return; // Exit the function to wait for promotion selection
             }
-
 
             // Update last move
             const fromIndex = Array.from(chessboard.children).indexOf(fromSquare);

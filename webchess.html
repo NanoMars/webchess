@@ -32,26 +32,41 @@
             justify-content: center;
             transition: background-color 0.3s ease; /* Smooth transition for highlights */
         }
-        .square img {
+        .square img,
+        .promotion-menu img {
             position: relative;
             z-index: 1; /* Ensure image is on top */
-            max-width: 90%; /* Ensure the piece fits well within the square */
-            max-height: 90%;
-        }
-        .promotion-menu {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            display: flex;
-            background-color: white;
-            border: 1px solid black;
-            z-index: 10;
+            width: 50px; /* Set a fixed width */
+            height: 50px; /* Set a fixed height */
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: -o-pixelated;
+            image-rendering: -webkit-optimize-contrast;
+            -ms-interpolation-mode: nearest-neighbor; /* for Internet Explorer */
         }
         .promotion-menu img {
-            width: 50px;
-            height: 50px;
-            cursor: pointer;
+            position: relative;
+            z-index: 1; /* Ensure image is on top */
+            width: 90%; /* Scale image to fit square */
+            height: 90%; /* Scale image to fit square */
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: -o-pixelated;
+            image-rendering: -webkit-optimize-contrast;
+            -ms-interpolation-mode: nearest-neighbor; /* for Internet Explorer */
+        }
+
+        .square img,
+        .promotion-menu img {
+            width: auto;
+            height: auto;
+            max-width: 100%;
+            max-height: 100%;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: -o-pixelated;
+            image-rendering: -webkit-optimize-contrast;
+            -ms-interpolation-mode: nearest-neighbor;
         }
     </style>
 </head>
@@ -213,6 +228,33 @@
             // Diagonal down-right
             for (let r = row + 1, c = col + 1; r < 8 && c < 8; r++, c++) {
                 if (!addMoveIfValid(possibleMoves, r, c, piece)) break;
+            }
+        }
+
+        function calculateKingMoves(possibleMoves, row, col, piece) {
+            const kingMoves = [
+                [row - 1, col - 1], [row - 1, col], [row - 1, col + 1],
+                [row, col - 1], [row, col + 1],
+                [row + 1, col - 1], [row + 1, col], [row + 1, col + 1]
+            ];
+
+            kingMoves.forEach(([r, c]) => {
+                if (r >= 0 && r < 8 && c >= 0 && c < 8) {
+                    addMoveIfValid(possibleMoves, r, c, piece);
+                }
+            });
+
+            // Castling logic
+            const color = piece.src.includes('white') ? 'white' : 'black';
+            if (!kingMoved[color]) {
+                // Right castling
+                if (!rookMoved[color].right && isPathClear(row, col, col + 3)) {
+                    possibleMoves.push(chessboard.children[row * 8 + (col + 2)]);
+                }
+                // Left castling
+                if (!rookMoved[color].left && isPathClear(row, col, col - 4)) {
+                    possibleMoves.push(chessboard.children[row * 8 + (col - 2)]);
+                }
             }
         }
 

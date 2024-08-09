@@ -216,24 +216,6 @@
             return null; // Just in case the king isn't found (which shouldn't happen in a standard game)
         }
         
-        function isSquareUnderAttack(row, col, color) {
-            const opponentColor = color === 'white' ? 'black' : 'white';
-
-            for (let r = 0; r < 8; r++) {
-                for (let c = 0; c < 8; c++) {
-                    const square = chessboard.children[r * 8 + c];
-                    const piece = square.querySelector('.piece-container').lastChild;
-
-                    if (piece && piece.src.includes(opponentColor)) {
-                        const possibleMoves = calculatePossibleMoves(piece, r, c);
-                        if (possibleMoves.includes(chessboard.children[row * 8 + col])) {
-                            return true;
-                        }
-                    }
-                }
-            }
-            return false;
-        }
 
         function checkKingsInCheck() {
             // Get the positions of both kings
@@ -330,32 +312,31 @@
 
             kingMoves.forEach(([r, c]) => {
                 if (r >= 0 && r < 8 && c >= 0 && c < 8) {
-                    // Check if the square is not under attack
-                    if (!isSquareUnderAttack(r, c, color)) {
+                    // Exclude the king itself when checking for attacks
+                    if (!isSquareUnderAttack(r, c, color, true)) {
                         addMoveIfValid(possibleMoves, r, c, piece);
                     }
                 }
             });
 
+            // Castling logic can stay the same as before
             if (!kingMoved[color]) {
-                // Right castling (King-side)
                 if (!rookMoved[color].right && isPathClear(row, col, col + 3) &&
-                    !isSquareUnderAttack(row, col, color) &&
-                    !isSquareUnderAttack(row, col + 1, color) &&
-                    !isSquareUnderAttack(row, col + 2, color)) {
+                    !isSquareUnderAttack(row, col, color, true) &&
+                    !isSquareUnderAttack(row, col + 1, color, true) &&
+                    !isSquareUnderAttack(row, col + 2, color, true)) {
                     possibleMoves.push(chessboard.children[row * 8 + (col + 2)]);
                 }
-                // Left castling (Queen-side)
                 if (!rookMoved[color].left && isPathClear(row, col, col - 4) &&
-                    !isSquareUnderAttack(row, col, color) &&
-                    !isSquareUnderAttack(row, col - 1, color) &&
-                    !isSquareUnderAttack(row, col - 2, color)) {
+                    !isSquareUnderAttack(row, col, color, true) &&
+                    !isSquareUnderAttack(row, col - 1, color, true) &&
+                    !isSquareUnderAttack(row, col - 2, color, true)) {
                     possibleMoves.push(chessboard.children[row * 8 + (col - 2)]);
                 }
             }
         }
 
-        function isSquareUnderAttack(row, col, color) {
+        function isSquareUnderAttack(row, col, color, excludeKing = false) {
             const opponentColor = color === 'white' ? 'black' : 'white';
 
             for (let r = 0; r < 8; r++) {
@@ -363,9 +344,12 @@
                     const square = chessboard.children[r * 8 + c];
                     const piece = square.querySelector('.piece-container').lastChild;
 
-                    if (piece && piece.src.includes(opponentColor)) {
+                    if (piece && piece.src.includes(opponentColor) && (!excludeKing || piece.dataset.type.toLowerCase() !== 'k')) {
                         const possibleMoves = calculatePossibleMoves(piece, r, c);
+                        console.log(`Piece ${piece.dataset.type} at (${r}, ${c}) has possible moves:`, possibleMoves);
+
                         if (possibleMoves.includes(chessboard.children[row * 8 + col])) {
+                            console.log(`Square (${row}, ${col}) is under attack by ${piece.dataset.type} at (${r}, ${c})`);
                             return true;
                         }
                     }
@@ -415,6 +399,8 @@
                 if (piece.src.includes('white') !== topPiece.src.includes('white')) {
                     console.log(`${piece.dataset.type.toUpperCase()} can capture piece at: (${row}, ${col})`);
                     possibleMoves.push(square); // Capture opponent's piece
+                } else {
+                    console.log(`${piece.dataset.type.toUpperCase()} blocked by same color piece at: (${row}, ${col})`);
                 }
                 return false; // Stop further moves in this direction
             }

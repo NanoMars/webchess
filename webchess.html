@@ -426,6 +426,11 @@
 
             console.log(`Attempting to move piece from (${fromRow}, ${fromCol}) to (${toRow}, ${toCol})`);
 
+            // If there's already a piece in the target square, remove it (capture it)
+            if (toContainer.lastChild) {
+                toContainer.removeChild(toContainer.lastChild); // Capture the opponent's piece
+            }
+
             // Only apply castling logic if the piece is a king
             if (piece.dataset.type.toLowerCase() === 'k') {
                 console.log("King is being moved. Checking for castling...");

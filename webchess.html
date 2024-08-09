@@ -241,21 +241,6 @@
             }
         }
 
-        function calculateKingMoves(possibleMoves, row, col, piece) {
-            const kingMoves = [
-                [row - 1, col - 1], [row - 1, col], [row - 1, col + 1],
-                [row, col - 1], [row, col + 1],
-                [row + 1, col - 1], [row + 1, col], [row + 1, col + 1]
-            ];
-
-            kingMoves.forEach(([r, c]) => {
-                if (r >= 0 && r < 8 && c >= 0 && c < 8) {
-                    console.log(`Checking move for king to: (${r}, ${c})`);
-                    addMoveIfValid(possibleMoves, r, c, piece);
-                }
-            });
-        }
-
 
         
 
@@ -280,6 +265,8 @@
         }
 
         function calculateKingMoves(possibleMoves, row, col, piece) {
+            if (piece.dataset.type.toLowerCase() !== 'k') return;
+
             const kingMoves = [
                 [row - 1, col - 1], [row - 1, col], [row - 1, col + 1],
                 [row, col - 1], [row, col + 1],
@@ -288,32 +275,28 @@
 
             kingMoves.forEach(([r, c]) => {
                 if (r >= 0 && r < 8 && c >= 0 && c < 8) {
-                    console.log(`Checking move for king to: (${r}, ${c})`);
                     addMoveIfValid(possibleMoves, r, c, piece);
                 }
             });
 
-            // Castling logic commented out
-            /*
             const color = piece.src.includes('white') ? 'white' : 'black';
+
             if (!kingMoved[color]) {
-                // Right castling
+                // Right castling (King-side)
                 if (!rookMoved[color].right && isPathClear(row, col, col + 3) &&
                     !isSquareUnderAttack(row, col, color) &&
                     !isSquareUnderAttack(row, col + 1, color) &&
                     !isSquareUnderAttack(row, col + 2, color)) {
                     possibleMoves.push(chessboard.children[row * 8 + (col + 2)]);
                 }
-                // Left castling
+                // Left castling (Queen-side)
                 if (!rookMoved[color].left && isPathClear(row, col, col - 4) &&
                     !isSquareUnderAttack(row, col, color) &&
                     !isSquareUnderAttack(row, col - 1, color) &&
-                    !isSquareUnderAttack(row, col - 2, color) &&
-                    !isSquareUnderAttack(row, col - 3, color)) {
+                    !isSquareUnderAttack(row, col - 2, color)) {
                     possibleMoves.push(chessboard.children[row * 8 + (col - 2)]);
                 }
             }
-            */
         }
 
         function isSquareUnderAttack(row, col, color) {
@@ -374,13 +357,13 @@
 
             if (topPiece) {
                 if (piece.src.includes('white') !== topPiece.src.includes('white')) {
-                    console.log(`King can capture piece at: (${row}, ${col})`);
+                    console.log(`${piece.dataset.type.toUpperCase()} can capture piece at: (${row}, ${col})`);
                     possibleMoves.push(square); // Capture opponent's piece
                 }
                 return false; // Stop further moves in this direction
             }
 
-            console.log(`King can move to empty square at: (${row}, ${col})`);
+            console.log(`${piece.dataset.type.toUpperCase()} can move to empty square at: (${row}, ${col})`);
             possibleMoves.push(square); // Add empty square as a valid move
             return true;
         }
@@ -433,63 +416,76 @@
             const fromContainer = fromSquare.querySelector('.piece-container');
             const toContainer = toSquare.querySelector('.piece-container');
             const piece = fromContainer.lastChild;
-            const targetPiece = toContainer.lastChild;
 
-            console.log("Moving piece from", fromSquare, "to", toSquare);
+            const fromIndex = Array.from(chessboard.children).indexOf(fromSquare);
+            const toIndex = Array.from(chessboard.children).indexOf(toSquare);
+            const fromRow = Math.floor(fromIndex / 8);
+            const fromCol = fromIndex % 8;
+            const toRow = Math.floor(toIndex / 8);
+            const toCol = toIndex % 8;
 
-            // Capture logic
-            if (targetPiece && piece.src.includes('white') !== targetPiece.src.includes('white')) {
-                console.log("Capturing piece at target square:", targetPiece);
-                toContainer.removeChild(targetPiece);
+            console.log(`Attempting to move piece from (${fromRow}, ${fromCol}) to (${toRow}, ${toCol})`);
+
+            // Only apply castling logic if the piece is a king
+            if (piece.dataset.type.toLowerCase() === 'k') {
+                console.log("King is being moved. Checking for castling...");
+                const color = piece.src.includes('white') ? 'white' : 'black';
+
+                if (Math.abs(fromCol - toCol) === 2) {
+                    console.log("Attempting to castle...");
+                    // Right castling
+                    if (toCol === fromCol + 2) {
+                        const rookSquare = chessboard.children[fromRow * 8 + 7];
+                        const rookContainer = rookSquare.querySelector('.piece-container');
+                        const rookPiece = rookContainer.lastChild;
+
+                        if (rookPiece && rookPiece.dataset.type.toLowerCase() === 'r') {
+                            console.log("Performing right-side castling...");
+                            movePiece(rookSquare, chessboard.children[fromRow * 8 + (fromCol + 1)]);
+                        }
+                    }
+                    // Left castling
+                    if (toCol === fromCol - 2) {
+                        const rookSquare = chessboard.children[fromRow * 8 + 0];
+                        const rookContainer = rookSquare.querySelector('.piece-container');
+                        const rookPiece = rookContainer.lastChild;
+
+                        if (rookPiece && rookPiece.dataset.type.toLowerCase() === 'r') {
+                            console.log("Performing left-side castling...");
+                            movePiece(rookSquare, chessboard.children[fromRow * 8 + (fromCol - 1)]);
+                        }
+                    }
+                }
+
+                kingMoved[color] = true;
             }
 
-            // En Passant capture
-            const isPawn = piece.dataset.type.toLowerCase() === 'p';
-            const isDoubleStep = lastMove && lastMove.pieceType === 'p' && Math.abs(lastMove.from.row - lastMove.to.row) === 2;
-            const isDiagonalMove = Math.abs(Array.from(chessboard.children).indexOf(fromSquare) % 8 - Array.from(chessboard.children).indexOf(toSquare) % 8) === 1;
-
-            if (isPawn && !targetPiece && isDoubleStep && isDiagonalMove) {
-                console.log("Attempting en passant capture");
-                const direction = piece.src.includes('white') ? -1 : 1;
-                const toRowIndex = Math.floor(Array.from(chessboard.children).indexOf(toSquare) / 8);
-                const toColIndex = Array.from(chessboard.children).indexOf(toSquare) % 8;
-
-                const enPassantRow = toRowIndex - direction;
-                const enPassantCol = toColIndex;
-                const enPassantSquare = chessboard.children[enPassantRow * 8 + enPassantCol];
-                const enPassantContainer = enPassantSquare.querySelector('.piece-container');
-                const enPassantPiece = enPassantContainer.lastChild;
-
-                console.log("En Passant details - direction:", direction, "toRowIndex:", toRowIndex, "toColIndex:", toColIndex, "enPassantRow:", enPassantRow, "enPassantCol:", enPassantCol, "enPassantSquare:", enPassantSquare);
-
-                if (enPassantPiece && enPassantPiece.dataset.type.toLowerCase() === 'p' && enPassantPiece.src.includes(piece.src.includes('white') ? 'black' : 'white')) {
-                    console.log("Removing en passant captured pawn:", enPassantPiece);
-                    enPassantContainer.removeChild(enPassantPiece); // Remove the captured pawn
-                } else {
-                    console.log("No pawn found for en passant capture");
+            // Rook movement tracking for castling
+            if (piece.dataset.type.toLowerCase() === 'r') {
+                const color = piece.src.includes('white') ? 'white' : 'black';
+                if (fromCol === 0) {
+                    rookMoved[color].left = true;
+                } else if (fromCol === 7) {
+                    rookMoved[color].right = true;
                 }
             }
 
-            // Move the piece
+            console.log("Moving piece normally.");
             fromContainer.removeChild(piece);
             toContainer.appendChild(piece);
 
             // Check for Pawn Promotion
-            const toIndex = Array.from(chessboard.children).indexOf(toSquare);
-            const rowIndex = Math.floor(toIndex / 8);
-            if (piece.dataset.type.toLowerCase() === 'p' && (rowIndex === 0 || rowIndex === 7)) {
+            if (piece.dataset.type.toLowerCase() === 'p' && (toRow === 0 || toRow === 7)) {
+                console.log("Pawn promotion triggered.");
                 showPromotionMenu(toSquare, piece);
                 return; // Exit the function to wait for promotion selection
             }
 
-            // Update last move
-            const fromIndex = Array.from(chessboard.children).indexOf(fromSquare);
-            lastMove = { 
-                from: { row: Math.floor(fromIndex / 8), col: fromIndex % 8 }, 
-                to: { row: rowIndex, col: toIndex % 8 }, 
-                pieceType: piece.dataset.type.toLowerCase() 
+            lastMove = {
+                from: { row: fromRow, col: fromCol },
+                to: { row: toRow, col: toCol },
+                pieceType: piece.dataset.type.toLowerCase()
             };
-
             console.log("Move completed. Last move updated:", lastMove);
         }
 

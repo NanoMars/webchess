@@ -203,6 +203,59 @@
             return possibleMoves;
         }
 
+        function findKingPosition(color) {
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    const square = chessboard.children[row * 8 + col];
+                    const piece = square.querySelector('.piece-container').lastChild;
+                    if (piece && piece.dataset.type.toLowerCase() === 'k' && piece.src.includes(color)) {
+                        return { row: row, col: col };
+                    }
+                }
+            }
+            return null; // Just in case the king isn't found (which shouldn't happen in a standard game)
+        }
+        
+        function isSquareUnderAttack(row, col, color) {
+            const opponentColor = color === 'white' ? 'black' : 'white';
+
+            for (let r = 0; r < 8; r++) {
+                for (let c = 0; c < 8; c++) {
+                    const square = chessboard.children[r * 8 + c];
+                    const piece = square.querySelector('.piece-container').lastChild;
+
+                    if (piece && piece.src.includes(opponentColor)) {
+                        const possibleMoves = calculatePossibleMoves(piece, r, c);
+                        if (possibleMoves.includes(chessboard.children[row * 8 + col])) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
+        function checkKingsInCheck() {
+            // Get the positions of both kings
+            const whiteKingPosition = findKingPosition('white');
+            const blackKingPosition = findKingPosition('black');
+
+            // Check if either king is under attack
+            const whiteKingInCheck = isSquareUnderAttack(whiteKingPosition.row, whiteKingPosition.col, 'white');
+            const blackKingInCheck = isSquareUnderAttack(blackKingPosition.row, blackKingPosition.col, 'black');
+
+            // Log the results
+            console.log("Is the White King in Check?:", whiteKingInCheck);
+            console.log("Is the Black King in Check?:", blackKingInCheck);
+
+            return {
+                whiteInCheck: whiteKingInCheck,
+                blackInCheck: blackKingInCheck
+            };
+        }
+
+
+
         function calculateRookMoves(possibleMoves, row, col, piece) {
             // Check upwards
             for (let r = row - 1; r >= 0; r--) {
@@ -273,13 +326,16 @@
                 [row + 1, col - 1], [row + 1, col], [row + 1, col + 1]
             ];
 
+            const color = piece.src.includes('white') ? 'white' : 'black';
+
             kingMoves.forEach(([r, c]) => {
                 if (r >= 0 && r < 8 && c >= 0 && c < 8) {
-                    addMoveIfValid(possibleMoves, r, c, piece);
+                    // Check if the square is not under attack
+                    if (!isSquareUnderAttack(r, c, color)) {
+                        addMoveIfValid(possibleMoves, r, c, piece);
+                    }
                 }
             });
-
-            const color = piece.src.includes('white') ? 'white' : 'black';
 
             if (!kingMoved[color]) {
                 // Right castling (King-side)
@@ -479,6 +535,16 @@
             fromContainer.removeChild(piece);
             toContainer.appendChild(piece);
 
+            const kingsInCheck = checkKingsInCheck();
+
+            // You can also add some logic here to handle the game state if either king is in check
+            if (kingsInCheck.whiteInCheck) {
+                console.log("The White King is in check!");
+            }
+            if (kingsInCheck.blackInCheck) {
+                console.log("The Black King is in check!");
+            }
+
             // Check for Pawn Promotion
             if (piece.dataset.type.toLowerCase() === 'p' && (toRow === 0 || toRow === 7)) {
                 console.log("Pawn promotion triggered.");
@@ -516,6 +582,9 @@
                 }
             });
         }
+
+        const isAttacked = isSquareUnderAttack(3, 4, 'white'); // Check if the square at (3, 3) is under attack from black pieces
+        console.log("Is the square (3, 4) under attack?:", isAttacked); 
 
     </script>
 </body>

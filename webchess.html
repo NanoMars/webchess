@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <a href="https://github.com/NanoMars/webchess" class="github-link" target="_blank">View on GitHub</a>
     <title>Chessboard</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
             height: 100vh;
@@ -19,9 +19,10 @@
             display: grid;
             grid-template-columns: repeat(8, 1fr);
             grid-template-rows: repeat(8, 1fr);
-            width: 80vmin; /* Make the board responsive */
-            height: 80vmin; /* Make the board responsive */
+            width: 80vmin; /* Responsive board size */
+            height: 80vmin; /* Responsive board size */
             border: 2px solid #020B1E;
+            margin: auto;
         }
         .square {
             position: relative; /* Ensure positioning context for children */
@@ -68,6 +69,53 @@
             image-rendering: -webkit-optimize-contrast;
             -ms-interpolation-mode: nearest-neighbor;
         }
+
+        .promotion-menu {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #020B1E;
+            padding: 10px;
+            border: 2px solid #FA8EC7;
+            z-index: 1000; /* Ensure it appears above other elements */
+        }
+
+        .square img,
+        .square img {
+            user-select: none; /* Prevent selection */
+            pointer-events: none; /* Disable pointer events on the board pieces */
+        }
+
+        .promotion-menu img {
+            user-select: none; /* Prevent selection */
+            pointer-events: all; /* Enable pointer events for promotion menu items */
+        }
+
+        .square {
+            user-select: none; /* Prevent selection of square elements */
+        }
+
+        .piece-container {
+            pointer-events: all; /* Re-enable pointer events for the container so you can still move pieces */
+        }
+        .github-link {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            font-size: 12px;
+            color: #020B1E; /* Dark color for visibility */
+            text-decoration: none;
+            background-color: #FA8EC7; /* Pink background */
+            padding: 5px 10px;
+            border-radius: 5px;
+            border: 1px solid #020B1E; /* Border to match the theme */
+            opacity: 0.8; /* Slight transparency */
+            transition: opacity 0.3s ease;
+        }
+
+        .github-link:hover {
+            opacity: 1; /* Fully opaque on hover */
+        }
     </style>
 </head>
 <body>
@@ -99,6 +147,8 @@
             'PPPPPPPP',
             'RNBQKBNR'
         ];
+
+        let isPromotionInProgress = false;
 
         function createBoard() {
             const chessboard = document.getElementById('chessboard');
@@ -150,9 +200,11 @@
         const chessboard = document.getElementById('chessboard');
 
         chessboard.addEventListener('click', (event) => {
-            const targetSquare = event.target.closest('.square');
+            if (isPromotionInProgress) return; // Prevent any moves during promotion
 
+            const targetSquare = event.target.closest('.square');
             if (!targetSquare) return;
+
 
             const targetIndex = Array.from(chessboard.children).indexOf(targetSquare);
             const targetRow = Math.floor(targetIndex / 8);
@@ -427,15 +479,12 @@
 
             if (topPiece) {
                 if (piece.src.includes('white') !== topPiece.src.includes('white')) {
-                    console.log(`${piece.dataset.type.toUpperCase()} can capture piece at: (${row}, ${col})`);
                     possibleMoves.push(square); // Capture opponent's piece
                 } else {
-                    console.log(`${piece.dataset.type.toUpperCase()} blocked by same color piece at: (${row}, ${col})`);
                 }
                 return false; // Stop further moves in this direction
             }
 
-            console.log(`${piece.dataset.type.toUpperCase()} can move to empty square at: (${row}, ${col})`);
             possibleMoves.push(square); // Add empty square as a valid move
             return true;
         }
@@ -458,6 +507,8 @@
 
 
         function showPromotionMenu(square, piece) {
+            isPromotionInProgress = true; // Set promotion state to true
+
             const promotionMenu = document.getElementById('promotion-menu');
             promotionMenu.innerHTML = '';
 
@@ -469,19 +520,33 @@
                 img.onclick = () => promotePawn(square, piece, type);
                 promotionMenu.appendChild(img);
             });
-                promotionMenu.style.display = 'flex';
+
+            if (piece.src.includes('white')) {
+                promotionMenu.style.top = '10px'; // Position at the top
+                promotionMenu.style.bottom = ''; // Clear any bottom positioning
+                promotionMenu.style.backgroundColor = '#FA8EC7'; // Signature pink for white
+                promotionMenu.style.border = '2px solid #020B1E'; // Black border for contrast
+            } else {
+                promotionMenu.style.bottom = '10px'; // Position at the bottom
+                promotionMenu.style.top = ''; // Clear any top positioning
+                promotionMenu.style.backgroundColor = '#020B1E'; // Signature black for black
+                promotionMenu.style.border = '2px solid #FA8EC7'; // Pink border for contrast
             }
 
-            function hidePromotionMenu() {
-                const promotionMenu = document.getElementById('promotion-menu');
-                promotionMenu.style.display = 'none';
-            }
+            promotionMenu.style.display = 'flex';
+        }
 
-            function promotePawn(square, piece, type) {
-                piece.src = pieceImages[type];
-                piece.dataset.type = type;
-                hidePromotionMenu();
-            }
+        function hidePromotionMenu() {
+            const promotionMenu = document.getElementById('promotion-menu');
+            promotionMenu.style.display = 'none';
+        }
+
+        function promotePawn(square, piece, type) {
+            piece.src = pieceImages[type];
+            piece.dataset.type = type;
+            hidePromotionMenu();
+            isPromotionInProgress = false; // Set promotion state to false
+        }
 
         // Move a piece and handle captures
         function movePiece(fromSquare, toSquare) {
@@ -495,8 +560,6 @@
             const fromCol = fromIndex % 8;
             const toRow = Math.floor(toIndex / 8);
             const toCol = toIndex % 8;
-
-            console.log(`Attempting to move piece from (${fromRow}, ${fromCol}) to (${toRow}, ${toCol})`);
 
             // If there's already a piece in the target square, remove it (capture it)
             if (toContainer.lastChild) {
@@ -547,13 +610,12 @@
                 }
             }
 
-            console.log("Moving piece normally.");
             fromContainer.removeChild(piece);
             toContainer.appendChild(piece);
 
             const kingsInCheck = checkKingsInCheck();
 
-            // You can also add some logic here to handle the game state if either king is in check
+            // Handle the game state if either king is in check
             if (kingsInCheck.whiteInCheck) {
                 console.log("The White King is in check!");
             }
@@ -563,17 +625,22 @@
 
             // Check for Pawn Promotion
             if (piece.dataset.type.toLowerCase() === 'p' && (toRow === 0 || toRow === 7)) {
-                console.log("Pawn promotion triggered.");
                 showPromotionMenu(toSquare, piece);
                 return; // Exit the function to wait for promotion selection
             }
 
+            // Update last move
             lastMove = {
                 from: { row: fromRow, col: fromCol },
                 to: { row: toRow, col: toCol },
                 pieceType: piece.dataset.type.toLowerCase()
             };
-            console.log("Move completed. Last move updated:", lastMove);
+
+            // Check for checkmate after the move
+            const opponentColor = piece.src.includes('white') ? 'black' : 'white';
+            if (isCheckmate(opponentColor)) {
+                displayCheckmateMessage(opponentColor); // Display UI for checkmate
+            }
         }
 
 
@@ -623,8 +690,63 @@
             return !isInCheck; // The move is valid if it does not leave the king in check
         }
 
-        const isAttacked = isSquareUnderAttack(3, 4, 'white'); // Check if the square at (3, 3) is under attack from black pieces
-        console.log("Is the square (3, 4) under attack?:", isAttacked); 
+        function isCheckmate(color) {
+            const kingPosition = findKingPosition(color);
+
+            // Check if the king is under attack
+            const isKingInCheck = isSquareUnderAttack(kingPosition.row, kingPosition.col, color);
+
+            if (!isKingInCheck) {
+                return false; // No checkmate if the king is not in check
+            }
+
+            // Check if the king has any valid moves left
+            const kingSquare = chessboard.children[kingPosition.row * 8 + kingPosition.col];
+            const possibleKingMoves = calculatePossibleMoves(kingSquare.querySelector('.piece-container').lastChild, kingPosition.row, kingPosition.col);
+
+            for (let move of possibleKingMoves) {
+                if (isMoveValid(kingSquare, move)) {
+                    return false; // No checkmate if the king has any valid moves
+                }
+            }
+
+            // Check if any other piece has a valid move
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    const square = chessboard.children[row * 8 + col];
+                    const piece = square.querySelector('.piece-container').lastChild;
+                    if (piece && piece.src.includes(color)) {
+                        const possibleMoves = calculatePossibleMoves(piece, row, col);
+                        for (let move of possibleMoves) {
+                            if (isMoveValid(square, move)) {
+                                return false; // No checkmate if any other piece has a valid move
+                            }
+                        }
+                    }
+                }
+            }
+
+            return true; // It's checkmate if the king is in check and no valid moves are available
+        }
+        
+        function displayCheckmateMessage(losingColor) {
+            const winningColor = losingColor === 'white' ? 'Black' : 'White';
+            const message = `${winningColor} Wins by Checkmate!`;
+
+            const messageDiv = document.createElement('div');
+            messageDiv.style.position = 'absolute';
+            messageDiv.style.top = '50%';
+            messageDiv.style.left = '50%';
+            messageDiv.style.transform = 'translate(-50%, -50%)';
+            messageDiv.style.padding = '20px';
+            messageDiv.style.backgroundColor = '#020B1E';
+            messageDiv.style.color = '#FA8EC7';
+            messageDiv.style.fontSize = '24px';
+            messageDiv.style.zIndex = '1000'; // Ensure the message is on top of other elements
+            messageDiv.textContent = message;
+
+            document.body.appendChild(messageDiv);
+        }
 
     </script>
 </body>

@@ -344,13 +344,38 @@
                     const square = chessboard.children[r * 8 + c];
                     const piece = square.querySelector('.piece-container').lastChild;
 
-                    if (piece && piece.src.includes(opponentColor) && (!excludeKing || piece.dataset.type.toLowerCase() !== 'k')) {
-                        const possibleMoves = calculatePossibleMoves(piece, r, c);
-                        console.log(`Piece ${piece.dataset.type} at (${r}, ${c}) has possible moves:`, possibleMoves);
+                    if (piece && piece.src.includes(opponentColor)) {
 
-                        if (possibleMoves.includes(chessboard.children[row * 8 + col])) {
-                            console.log(`Square (${row}, ${col}) is under attack by ${piece.dataset.type} at (${r}, ${c})`);
-                            return true;
+                        // Pawn attack logic
+                        if (piece.dataset.type.toLowerCase() === 'p') {
+                            const direction = opponentColor === 'white' ? -1 : 1; // Opponent pawns attack differently based on color
+                            if ((row === r + direction && col === c + 1) || (row === r + direction && col === c - 1)) {
+                                return true; // The square is under attack by a pawn
+                            }
+                            continue; // No need to check other moves for pawns, they only attack diagonally
+                        }
+
+                        // King vs King adjacency check
+                        if (piece.dataset.type.toLowerCase() === 'k') {
+                            const adjacentKingMoves = [
+                                [r - 1, c - 1], [r - 1, c], [r - 1, c + 1],
+                                [r, c - 1],                 [r, c + 1],
+                                [r + 1, c - 1], [r + 1, c], [r + 1, c + 1]
+                            ];
+                            for (let move of adjacentKingMoves) {
+                                if (move[0] === row && move[1] === col) {
+                                    return true; // This square would be adjacent to the opposing king
+                                }
+                            }
+                            continue; // No need to check further moves for kings, they only affect adjacent squares
+                        }
+
+                        // Calculate possible moves for other pieces
+                        if (!excludeKing || piece.dataset.type.toLowerCase() !== 'k') {
+                            const possibleMoves = calculatePossibleMoves(piece, r, c);
+                            if (possibleMoves.includes(chessboard.children[row * 8 + col])) {
+                                return true; // The square is under attack
+                            }
                         }
                     }
                 }

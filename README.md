@@ -1,8 +1,10 @@
 # WebChess
 
-[![HTML](https://img.shields.io/badge/HTML-5-E34F26)](https://developer.mozilla.org/en-US/docs/Web/HTML) [![CSS](https://img.shields.io/badge/CSS-3-1572B6)](https://developer.mozilla.org/en-US/docs/Web/CSS) [![JavaScript](https://img.shields.io/badge/JavaScript-ES6+-F7DF1E)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)
+[![HTML](https://img.shields.io/badge/HTML-5-E34F26)](https://developer.mozilla.org/en-US/docs/Web/HTML) [![CSS](https://img.shields.io/badge/CSS-3-1572B6)](https://developer.mozilla.org/en-US/docs/Web/CSS) [![JavaScript](https://img.shields.io/badge/JavaScript-ES6+-F7DF1E)](https://developer.mozilla.org/en-US/docs/Web/JavaScript)  
 
 WebChess is a browser-based chess game that I created to learn HTML, CSS, and JavaScript in this context. The project was made for [Hack Club Arcade](https://hackclub.com/arcade/) and completed in 25 hours.
+
+You can play webchess at [this link](https://nanomars.github.io/webchess/)
 
 ## License
 

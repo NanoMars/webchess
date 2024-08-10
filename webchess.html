@@ -154,7 +154,6 @@
 
             if (!targetSquare) return;
 
-            // Ensure the click target is the square itself, not the child elements
             const targetIndex = Array.from(chessboard.children).indexOf(targetSquare);
             const targetRow = Math.floor(targetIndex / 8);
             const targetCol = targetIndex % 8;
@@ -167,15 +166,21 @@
                 selectedPiece = null;
             } else if (targetSquare.firstChild) {
                 const pieceContainer = targetSquare.querySelector('.piece-container');
-                const piece = pieceContainer.lastChild; // Select the top piece
+                const piece = pieceContainer.lastChild;
                 if (!piece) return;
 
                 selectedPiece = targetSquare;
                 const pieceRow = Math.floor(Array.from(chessboard.children).indexOf(targetSquare) / 8);
                 const pieceCol = Array.from(chessboard.children).indexOf(targetSquare) % 8;
 
-                const possibleMoves = calculatePossibleMoves(piece, pieceRow, pieceCol);
-                highlightPossibleMoves(possibleMoves);
+                if (piece.dataset.type.toLowerCase() !== 'k') {
+                    const possibleMoves = calculatePossibleMoves(piece, pieceRow, pieceCol);
+                    highlightPossibleMoves(possibleMoves, selectedPiece);
+                } else {
+                    // Handle king separately, as we already have checks for king-specific moves
+                    const possibleMoves = calculatePossibleMoves(piece, pieceRow, pieceCol);
+                    highlightPossibleMoves(possibleMoves, selectedPiece);
+                }
             }
         });
 
@@ -573,9 +578,11 @@
 
 
         // Highlight possible moves for a selected piece
-        function highlightPossibleMoves(possibleMoves) {
+        function highlightPossibleMoves(possibleMoves, fromSquare) {
             possibleMoves.forEach(square => {
-                square.style.backgroundColor = '#FFFFFF'; // Highlight move options
+                if (isMoveValid(fromSquare, square)) {
+                    square.style.backgroundColor = '#FFFFFF'; // Highlight valid move options
+                }
             });
         }
 
@@ -592,6 +599,28 @@
                     square.style.backgroundColor = '#020B1E'; // Original dark color
                 }
             });
+        }
+
+        function isMoveValid(fromSquare, toSquare) {
+            const fromContainer = fromSquare.querySelector('.piece-container');
+            const toContainer = toSquare.querySelector('.piece-container');
+            const piece = fromContainer.lastChild;
+
+            // Move the piece to the target square temporarily
+            fromContainer.removeChild(piece);
+            toContainer.appendChild(piece);
+
+            const color = piece.src.includes('white') ? 'white' : 'black';
+            const kingPosition = findKingPosition(color);
+
+            // Check if the king is in check after the move
+            const isInCheck = isSquareUnderAttack(kingPosition.row, kingPosition.col, color);
+
+            // Revert the move
+            toContainer.removeChild(piece);
+            fromContainer.appendChild(piece);
+
+            return !isInCheck; // The move is valid if it does not leave the king in check
         }
 
         const isAttacked = isSquareUnderAttack(3, 4, 'white'); // Check if the square at (3, 3) is under attack from black pieces
